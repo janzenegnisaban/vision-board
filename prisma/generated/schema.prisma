@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  announcements Announcement[]
+  events        Event[]
+}
+
+model Announcement {
+  id             String               @id @default(cuid())
+  title          String
+  content        String
+  category       AnnouncementCategory
+  displayType    DisplayType
+  date           DateTime
+  image          String?
+  images         Json?
+  hotspots       Json?
+  timelineEvents Json?
+  published      Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+}
+
+model Event {
+  id         String        @id @default(cuid())
+  title      String
+  location   String
+  date       DateTime
+  startTime  String
+  endTime    String
+  details    String
+  category   EventCategory
+  department String?
+  published  Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum AnnouncementCategory {
+  important
+  event
+  update
+  general
+}
+
+enum EventCategory {
+  conference
+  webinar
+  community
+  internal
+  product
+}
+
+enum DisplayType {
+  standard
+  card
+  banner
+  grid
+  timeline
+  image_carousel
+  image_hotspots
+  timeline_view
+}

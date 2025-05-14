@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  announcements Announcement[]
+  events        Event[]
+  analytics     Analytics[]
+  Reaction      Reaction[]
+  Comment       Comment[]
+}
+
+model Announcement {
+  id             String               @id @default(cuid())
+  title          String
+  content        String
+  category       AnnouncementCategory
+  displayType    DisplayType
+  date           DateTime
+  image          String?
+  images         Json?
+  hotspots       Json?
+  timelineEvents Json?
+  published      Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  // Analytics relation
+  views        Int @default(0)
+  interactions Int @default(0)
+  shares       Int @default(0)
+
+  // New relations
+  reactions Reaction[]
+  comments  Comment[]
+}
+
+model Event {
+  id         String        @id @default(cuid())
+  title      String
+  location   String
+  date       DateTime
+  startTime  String
+  endTime    String
+  details    String
+  category   EventCategory
+  department String?
+  published  Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  // Analytics relation
+  views        Int @default(0)
+  interactions Int @default(0)
+  shares       Int @default(0)
+
+  // New relations
+  reactions Reaction[]
+  comments  Comment[]
+}
+
+model Analytics {
+  id   String   @id @default(cuid())
+  date DateTime @default(now())
+
+  // User activity
+  activeUsers Int
+  newUsers    Int
+  pageViews   Int
+
+  // Device usage
+  desktopUsers Int
+  mobileUsers  Int
+  tabletUsers  Int
+
+  // Session data
+  avgSessionDuration Int // in seconds
+  bounceRate         Float
+
+  // Creator
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum AnnouncementCategory {
+  important
+  event
+  update
+  general
+}
+
+enum EventCategory {
+  conference
+  webinar
+  community
+  internal
+  product
+}
+
+enum DisplayType {
+  standard
+  card
+  banner
+  grid
+  timeline
+  image_carousel
+  image_hotspots
+  timeline_view
+}
+
+// New models for reactions and comments
+model Reaction {
+  id        String   @id @default(cuid())
+  type      String // e.g., "like", "love", "laugh", etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+  announcement   Announcement? @relation(fields: [announcementId], references: [id])
+  announcementId String?
+  event          Event?        @relation(fields: [eventId], references: [id])
+  eventId        String?
+
+  @@unique([userId, announcementId, type])
+  @@unique([userId, eventId, type])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+  announcement   Announcement? @relation(fields: [announcementId], references: [id])
+  announcementId String?
+  event          Event?        @relation(fields: [eventId], references: [id])
+  eventId        String?
+}
